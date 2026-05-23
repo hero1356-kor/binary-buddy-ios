@@ -3,7 +3,6 @@ import Foundation
 public enum ProgrammerCalculatorError: LocalizedError, Equatable {
     case emptyInput
     case invalidNumber
-    case valueOutOfRange
 
     public var errorDescription: String? {
         switch self {
@@ -11,8 +10,6 @@ public enum ProgrammerCalculatorError: LocalizedError, Equatable {
             return "Enter a value."
         case .invalidNumber:
             return "Invalid number for selected base."
-        case .valueOutOfRange:
-            return "Value does not fit in selected bit width."
         }
     }
 }
@@ -31,14 +28,7 @@ public struct ProgrammerCalculator {
             throw ProgrammerCalculatorError.emptyInput
         }
 
-        guard let parsedValue = UInt64(cleanedInput, radix: base.radix) else {
-            throw ProgrammerCalculatorError.invalidNumber
-        }
-
-        guard parsedValue <= bitWidth.maxUnsignedValue else {
-            throw ProgrammerCalculatorError.valueOutOfRange
-        }
-
+        let parsedValue = try parse(cleanedInput, base: base)
         let maskedValue = parsedValue & bitWidth.maxUnsignedValue
 
         return ProgrammerCalculatorResult(
@@ -50,6 +40,21 @@ public struct ProgrammerCalculator {
             octalText: formatOctal(maskedValue),
             signedDecimalText: formatSignedDecimal(maskedValue, bitWidth: bitWidth)
         )
+    }
+
+    private func parse(_ input: String, base: NumberBase) throws -> UInt64 {
+        if base == .decimal, input.hasPrefix("-") {
+            guard let signedValue = Int64(input) else {
+                throw ProgrammerCalculatorError.invalidNumber
+            }
+            return UInt64(bitPattern: signedValue)
+        }
+
+        guard let parsedValue = UInt64(input, radix: base.radix) else {
+            throw ProgrammerCalculatorError.invalidNumber
+        }
+
+        return parsedValue
     }
 
     private func clean(_ input: String, for base: NumberBase) -> String {
@@ -80,7 +85,7 @@ public struct ProgrammerCalculator {
     private func formatHex(_ value: UInt64, bitWidth: BitWidth) -> String {
         let raw = String(value, radix: 16, uppercase: true)
         let padded = raw.leftPadded(toLength: bitWidth.hexDigitCount, with: "0")
-        return "0x\(group(padded, size: 4))"
+        return "0x\(padded)"
     }
 
     private func formatBinary(_ value: UInt64, bitWidth: BitWidth) -> String {
