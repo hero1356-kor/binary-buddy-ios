@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ProgrammerCalculatorView: View {
     @State private var inputText: String = "1234"
@@ -21,14 +22,14 @@ struct ProgrammerCalculatorView: View {
             }
             .navigationTitle("BinaryBuddy")
             .onAppear(perform: updateResult)
-            .onChange(of: inputText) { _, _ in updateResult() }
-            .onChange(of: selectedBase) { _, newBase in
+            .onChange(of: inputText) { _ in updateResult() }
+            .onChange(of: selectedBase) { newBase in
                 if inputText.isEmpty {
                     inputText = newBase.placeholder
                 }
                 updateResult()
             }
-            .onChange(of: selectedBitWidth) { _, _ in updateResult() }
+            .onChange(of: selectedBitWidth) { _ in updateResult() }
         }
     }
 
