@@ -14,6 +14,7 @@ final class ProgrammerCalculatorTests: XCTestCase {
         XCTAssertEqual(result.decimalText, "1234")
         XCTAssertEqual(result.hexText, "0x04D2")
         XCTAssertEqual(result.binaryText, "0b0000_0100_1101_0010")
+        XCTAssertEqual(result.octalText, "0o2322")
     }
 
     func testHexPrefixInput() throws {
@@ -26,6 +27,7 @@ final class ProgrammerCalculatorTests: XCTestCase {
         XCTAssertEqual(result.decimalText, "255")
         XCTAssertEqual(result.hexText, "0xFF")
         XCTAssertEqual(result.binaryText, "0b1111_1111")
+        XCTAssertEqual(result.signedDecimalText, "-1")
     }
 
     func testBinaryPrefixInput() throws {
@@ -40,13 +42,27 @@ final class ProgrammerCalculatorTests: XCTestCase {
         XCTAssertEqual(result.binaryText, "0b0000_1010")
     }
 
-    func testValueOutOfRange() {
-        XCTAssertThrowsError(
-            try calculator.convert(
-                input: "256",
-                base: .decimal,
-                bitWidth: .bit8
-            )
+    func testValueIsMaskedToSelectedWidth() throws {
+        let result = try calculator.convert(
+            input: "256",
+            base: .decimal,
+            bitWidth: .bit8
         )
+
+        XCTAssertEqual(result.decimalText, "0")
+        XCTAssertEqual(result.hexText, "0x00")
+        XCTAssertEqual(result.binaryText, "0b0000_0000")
+    }
+
+    func testNegativeDecimalInputUsesBitPattern() throws {
+        let result = try calculator.convert(
+            input: "-1",
+            base: .decimal,
+            bitWidth: .bit16
+        )
+
+        XCTAssertEqual(result.decimalText, "65535")
+        XCTAssertEqual(result.hexText, "0xFFFF")
+        XCTAssertEqual(result.signedDecimalText, "-1")
     }
 }
