@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct ProgrammerCalculatorView: View {
-    @State private var decimalText: String = "1234"
-    @State private var hexText: String = "0x04D2"
-    @State private var binaryText: String = "0b0000_0100_1101_0010"
+    @State private var decimalText: String = "0"
+    @State private var hexText: String = "0x0000"
+    @State private var binaryText: String = "0b0000_0000_0000_0000"
 
     @State private var selectedBitWidth: BitWidth = .bit16
     @State private var errorMessage: String?
@@ -21,7 +21,7 @@ struct ProgrammerCalculatorView: View {
                 Color.black.ignoresSafeArea()
 
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 13) {
                         headerSection
                         controlSection
                         inputSection
@@ -58,8 +58,8 @@ struct ProgrammerCalculatorView: View {
     private var controlSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("BIT WIDTH")
-                    .font(.caption)
+                Text("Bit width")
+                    .font(.subheadline)
                     .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
 
@@ -74,7 +74,7 @@ struct ProgrammerCalculatorView: View {
 
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.vertical, 14)
         .background(cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
@@ -111,17 +111,13 @@ struct ProgrammerCalculatorView: View {
     }
 
     private var bitViewSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("BIT VIEW (\(selectedBitWidth.rawValue)-bit)")
-                .font(.headline)
-                .foregroundStyle(.white)
-
+        VStack(alignment: .leading, spacing: 0) {
             let bits = bitCells
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 5), count: 8), spacing: 5) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 8), spacing: 6) {
                 ForEach(bits) { bit in
                     Text(String(bit.value))
-                        .font(.system(.body, design: .monospaced))
-                        .frame(height: 29)
+                        .font(.system(size: 22, weight: .medium, design: .monospaced))
+                        .frame(height: 33)
                         .frame(maxWidth: .infinity)
                         .background(bitBackground(for: bit))
                         .foregroundStyle(bit.isEnabled ? .white : Color.white.opacity(0.28))
@@ -134,20 +130,16 @@ struct ProgrammerCalculatorView: View {
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.vertical, 16)
         .background(cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private var keypadSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("\(activeBase.rawValue) KEYPAD")
-                .font(.headline)
-                .foregroundStyle(.white)
-
+        VStack(alignment: .leading, spacing: 9) {
             operationRow
 
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 9), count: 4), spacing: 9) {
                 ForEach(keypadKeys) { key in
                     if let title = key.title {
                         let isEnabled = isKeyEnabled(title)
@@ -156,9 +148,9 @@ struct ProgrammerCalculatorView: View {
                             handleKeypadInput(title)
                         } label: {
                             Text(title)
-                                .font(.system(.title3, design: .rounded))
+                                .font(.system(size: 26, weight: .semibold, design: .rounded))
                                 .fontWeight(.semibold)
-                                .frame(height: 40)
+                                .frame(height: 45)
                                 .frame(maxWidth: .infinity)
                                 .background(keypadBackground(for: title, isEnabled: isEnabled))
                                 .foregroundStyle(keypadForeground(isEnabled: isEnabled))
@@ -168,36 +160,33 @@ struct ProgrammerCalculatorView: View {
                         .disabled(!isEnabled)
                     } else {
                         Color.clear
-                            .frame(height: 40)
+                            .frame(height: 45)
                     }
                 }
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.vertical, 16)
         .background(cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private var operationRow: some View {
-        HStack(spacing: 8) {
-            ForEach(CalculatorOperator.allCases) { operation in
-                let isEnabled = operation != .equals || pendingOperator != nil
-
+        HStack(spacing: 9) {
+            ForEach(CalculatorOperator.arithmeticCases) { operation in
                 Button {
                     handleOperationInput(operation)
                 } label: {
                     Text(operation.symbol)
-                        .font(.system(.headline, design: .rounded))
+                        .font(.system(size: 24, weight: .semibold, design: .rounded))
                         .fontWeight(.semibold)
-                        .frame(height: 36)
+                        .frame(height: 42)
                         .frame(maxWidth: .infinity)
-                        .background(operationBackground(for: operation, isEnabled: isEnabled))
-                        .foregroundStyle(isEnabled ? .white : Color.white.opacity(0.26))
+                        .background(operationBackground(for: operation))
+                        .foregroundStyle(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
                 .buttonStyle(.plain)
-                .disabled(!isEnabled)
             }
         }
     }
@@ -241,11 +230,11 @@ struct ProgrammerCalculatorView: View {
 
     private var keypadKeys: [KeypadKey] {
         [
-            "7", "8", "9", "⌫",
+            "7", "8", "9", "=",
             "4", "5", "6", "AC",
             "1", "2", "3", "0",
             "A", "B", "C", "D",
-            "E", "F", nil, nil
+            "E", "F", "⌫", nil
         ].enumerated().map { offset, title in
             KeypadKey(index: offset, title: title)
         }
@@ -254,6 +243,10 @@ struct ProgrammerCalculatorView: View {
     private func isKeyEnabled(_ key: String) -> Bool {
         if key == "AC" || key == "⌫" {
             return true
+        }
+
+        if key == "=" {
+            return pendingOperator != nil
         }
 
         guard let scalar = key.unicodeScalars.first else {
@@ -273,6 +266,8 @@ struct ProgrammerCalculatorView: View {
         }
 
         switch key {
+        case "=":
+            return Color.orange.opacity(0.34)
         case "AC", "⌫":
             return Color.white.opacity(0.20)
         default:
@@ -284,12 +279,8 @@ struct ProgrammerCalculatorView: View {
         isEnabled ? .white : Color.white.opacity(0.26)
     }
 
-    private func operationBackground(for operation: CalculatorOperator, isEnabled: Bool) -> Color {
-        guard isEnabled else {
-            return Color.white.opacity(0.04)
-        }
-
-        if operation == pendingOperator || operation == .equals {
+    private func operationBackground(for operation: CalculatorOperator) -> Color {
+        if operation == pendingOperator {
             return Color.orange.opacity(0.34)
         }
 
@@ -323,6 +314,8 @@ struct ProgrammerCalculatorView: View {
 
     private func handleKeypadInput(_ key: String) {
         switch key {
+        case "=":
+            handleOperationInput(.equals)
         case "AC":
             clearAll()
         case "⌫":
@@ -531,6 +524,8 @@ private enum CalculatorOperator: String, CaseIterable, Identifiable {
     case multiply
     case divide
     case equals
+
+    static let arithmeticCases: [CalculatorOperator] = [.add, .subtract, .multiply, .divide]
 
     var id: String { rawValue }
 
