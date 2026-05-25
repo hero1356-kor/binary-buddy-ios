@@ -3,6 +3,7 @@ import Foundation
 public enum ProgrammerCalculatorError: LocalizedError, Equatable {
     case emptyInput
     case invalidNumber
+    case divisionByZero
 
     public var errorDescription: String? {
         switch self {
@@ -10,8 +11,17 @@ public enum ProgrammerCalculatorError: LocalizedError, Equatable {
             return "Enter a value."
         case .invalidNumber:
             return "Invalid number for selected base."
+        case .divisionByZero:
+            return "Cannot divide by zero."
         }
     }
+}
+
+public enum ProgrammerArithmeticOperator {
+    case add
+    case subtract
+    case multiply
+    case divide
 }
 
 public struct ProgrammerCalculator {
@@ -37,9 +47,33 @@ public struct ProgrammerCalculator {
             decimalText: String(maskedValue),
             hexText: formatHex(maskedValue, bitWidth: bitWidth),
             binaryText: formatBinary(maskedValue, bitWidth: bitWidth),
-            octalText: formatOctal(maskedValue),
             signedDecimalText: formatSignedDecimal(maskedValue, bitWidth: bitWidth)
         )
+    }
+
+    public func evaluate(
+        left: UInt64,
+        right: UInt64,
+        operation: ProgrammerArithmeticOperator,
+        bitWidth: BitWidth
+    ) throws -> UInt64 {
+        let rawResult: UInt64
+
+        switch operation {
+        case .add:
+            rawResult = left &+ right
+        case .subtract:
+            rawResult = left &- right
+        case .multiply:
+            rawResult = left &* right
+        case .divide:
+            guard right != 0 else {
+                throw ProgrammerCalculatorError.divisionByZero
+            }
+            rawResult = left / right
+        }
+
+        return rawResult & bitWidth.maxUnsignedValue
     }
 
     private func parse(_ input: String, base: NumberBase) throws -> UInt64 {
@@ -71,10 +105,6 @@ public struct ProgrammerCalculator {
             if value.lowercased().hasPrefix("0b") {
                 value.removeFirst(2)
             }
-        case .octal:
-            if value.lowercased().hasPrefix("0o") {
-                value.removeFirst(2)
-            }
         case .decimal:
             break
         }
@@ -92,10 +122,6 @@ public struct ProgrammerCalculator {
         let raw = String(value, radix: 2)
         let padded = raw.leftPadded(toLength: bitWidth.rawValue, with: "0")
         return "0b\(group(padded, size: 4))"
-    }
-
-    private func formatOctal(_ value: UInt64) -> String {
-        "0o\(String(value, radix: 8))"
     }
 
     private func formatSignedDecimal(_ value: UInt64, bitWidth: BitWidth) -> String {

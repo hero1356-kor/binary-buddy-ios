@@ -1,10 +1,9 @@
 import Foundation
 
-public enum NumberBase: String, CaseIterable, Identifiable {
+public enum NumberBase: String, CaseIterable, Identifiable, Hashable {
     case decimal = "DEC"
     case hexadecimal = "HEX"
     case binary = "BIN"
-    case octal = "OCT"
 
     public var id: String { rawValue }
 
@@ -16,8 +15,6 @@ public enum NumberBase: String, CaseIterable, Identifiable {
             return 16
         case .binary:
             return 2
-        case .octal:
-            return 8
         }
     }
 
@@ -29,8 +26,6 @@ public enum NumberBase: String, CaseIterable, Identifiable {
             return "04D2"
         case .binary:
             return "10011010010"
-        case .octal:
-            return "2322"
         }
     }
 }
