@@ -167,6 +167,135 @@ public struct ProgrammerCalculator {
     }
 }
 
+public enum I2C32BitConversionError: LocalizedError, Equatable {
+    case invalidLittleEndianHexByteCount
+    case invalidBinaryBitCount
+    case invalidCharacters
+
+    public var errorDescription: String? {
+        switch self {
+        case .invalidLittleEndianHexByteCount:
+            return "Enter exactly 4 little-endian HEX bytes."
+        case .invalidBinaryBitCount:
+            return "Enter exactly 32 binary bits."
+        case .invalidCharacters:
+            return "Only HEX bytes or 32 binary bits are supported."
+        }
+    }
+}
+
+public struct I2C32BitDecodedValue: Equatable {
+    public let value: UInt32
+
+    public init(value: UInt32) {
+        self.value = value
+    }
+
+    public var hexText: String {
+        "0x\(String(format: "%08X", value))"
+    }
+
+    public var binaryText: String {
+        String(value, radix: 2).leftPadded(toLength: 32, with: "0")
+    }
+
+    public var littleEndianHexBytesText: String {
+        littleEndianBytes
+            .map { String(format: "%02X", $0) }
+            .joined(separator: " ")
+    }
+
+    public var littleEndianByteArguments: String {
+        littleEndianBytes
+            .map { String(format: "0x%02X", $0) }
+            .joined(separator: " ")
+    }
+
+    private var littleEndianBytes: [UInt8] {
+        (0..<4).map { index in
+            UInt8((value >> UInt32(index * 8)) & 0xFF)
+        }
+    }
+}
+
+public struct I2C32BitLittleEndianConverter {
+    public init() {}
+
+    public func decodeLittleEndianHexBytes(_ input: String) throws -> I2C32BitDecodedValue {
+        let compactHex = try compactHexDigits(from: input)
+
+        guard compactHex.count == 8 else {
+            throw I2C32BitConversionError.invalidLittleEndianHexByteCount
+        }
+
+        let bytes = try stride(from: 0, to: compactHex.count, by: 2).map { offset -> UInt32 in
+            let start = compactHex.index(compactHex.startIndex, offsetBy: offset)
+            let end = compactHex.index(start, offsetBy: 2)
+            guard let byte = UInt32(compactHex[start..<end], radix: 16) else {
+                throw I2C32BitConversionError.invalidCharacters
+            }
+            return byte
+        }
+
+        let value = bytes.enumerated().reduce(UInt32(0)) { result, item in
+            result | (item.element << UInt32(item.offset * 8))
+        }
+
+        return I2C32BitDecodedValue(value: value)
+    }
+
+    public func decodeBinary32(_ input: String) throws -> I2C32BitDecodedValue {
+        let compactBinary = try compactBinaryDigits(from: input)
+
+        guard compactBinary.count == 32 else {
+            throw I2C32BitConversionError.invalidBinaryBitCount
+        }
+
+        guard let value = UInt32(compactBinary, radix: 2) else {
+            throw I2C32BitConversionError.invalidCharacters
+        }
+
+        return I2C32BitDecodedValue(value: value)
+    }
+
+    private func compactHexDigits(from input: String) throws -> String {
+        let normalized = input.uppercased().replacingOccurrences(of: "0X", with: "")
+        let hexDigits = Set("0123456789ABCDEF")
+        let separators = Set(" \n\t\r_,;:[]{}()")
+        var result = ""
+
+        for character in normalized {
+            if hexDigits.contains(character) {
+                result.append(character)
+            } else if separators.contains(character) {
+                continue
+            } else {
+                throw I2C32BitConversionError.invalidCharacters
+            }
+        }
+
+        return result
+    }
+
+    private func compactBinaryDigits(from input: String) throws -> String {
+        let normalized = input.uppercased().replacingOccurrences(of: "0B", with: "")
+        let separators = Set(" \n\t\r_,;:[]{}()")
+        var result = ""
+
+        for character in normalized {
+            if character == "0" || character == "1" {
+                result.append(character)
+            } else if separators.contains(character) {
+                continue
+            } else {
+                throw I2C32BitConversionError.invalidCharacters
+            }
+        }
+
+        return result
+    }
+}
+
 private extension String {
     func leftPadded(toLength length: Int, with character: Character) -> String {
         guard count < length else { return self }

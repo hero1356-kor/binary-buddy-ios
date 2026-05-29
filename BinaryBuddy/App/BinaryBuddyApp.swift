@@ -4,7 +4,7 @@ import SwiftUI
 struct BinaryBuddyApp: App {
     var body: some Scene {
         WindowGroup {
-            ProgrammerCalculatorView()
+            BinaryBuddyRootView()
         }
     }
 }

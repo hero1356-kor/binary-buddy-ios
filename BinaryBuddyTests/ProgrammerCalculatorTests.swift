@@ -3,6 +3,7 @@ import XCTest
 
 final class ProgrammerCalculatorTests: XCTestCase {
     private let calculator = ProgrammerCalculator()
+    private let i2cConverter = I2C32BitLittleEndianConverter()
 
     func testDecimalToHexAndBinary() throws {
         let result = try calculator.convert(
@@ -97,6 +98,33 @@ final class ProgrammerCalculatorTests: XCTestCase {
             )
         ) { error in
             XCTAssertEqual(error as? ProgrammerCalculatorError, .divisionByZero)
+        }
+    }
+
+    func testI2CLittleEndianHexBytesDecodeToBinary32() throws {
+        let result = try i2cConverter.decodeLittleEndianHexBytes("78 56 34 12")
+
+        XCTAssertEqual(result.hexText, "0x12345678")
+        XCTAssertEqual(result.binaryText, "00010010001101000101011001111000")
+        XCTAssertEqual(result.littleEndianHexBytesText, "78 56 34 12")
+    }
+
+    func testI2CHexBytePrefixesAreSupported() throws {
+        let result = try i2cConverter.decodeLittleEndianHexBytes("0x78 0x56 0x34 0x12")
+
+        XCTAssertEqual(result.hexText, "0x12345678")
+    }
+
+    func testI2CBinary32DecodesToLittleEndianHexBytes() throws {
+        let result = try i2cConverter.decodeBinary32("00010010001101000101011001111000")
+
+        XCTAssertEqual(result.hexText, "0x12345678")
+        XCTAssertEqual(result.littleEndianHexBytesText, "78 56 34 12")
+    }
+
+    func testI2CRejectsNon32BitBinaryInput() {
+        XCTAssertThrowsError(try i2cConverter.decodeBinary32("1010")) { error in
+            XCTAssertEqual(error as? I2C32BitConversionError, .invalidBinaryBitCount)
         }
     }
 }
