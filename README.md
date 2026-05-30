@@ -1,6 +1,6 @@
-# BinaryBuddy iOS
+# DebugBuddy iOS
 
-BinaryBuddy is an iOS programmer calculator for binary, hexadecimal, Q-format, fixed-point, register map, and RTL utility workflows.
+DebugBuddy is an iOS programmer calculator for binary, hexadecimal, Q-format, fixed-point, register map, and RTL utility workflows.
 
 ## MVP
 

@@ -1,6 +1,10 @@
 import SwiftUI
 import UIKit
 
+private enum BinaryBuddyTheme {
+    static let accent = Color(red: 0.22, green: 0.82, blue: 0.50)
+}
+
 struct BinaryBuddyRootView: View {
     @State private var selectedTab: BinaryBuddyTab = .calculator
 
@@ -24,7 +28,7 @@ struct BinaryBuddyRootView: View {
                 .padding(.bottom, 4)
         }
         .background(Color.black)
-        .tint(.orange)
+        .tint(BinaryBuddyTheme.accent)
         .preferredColorScheme(.dark)
     }
 
@@ -95,11 +99,127 @@ private struct BottomModeSwitcher: View {
                     .minimumScaleFactor(0.8)
             }
             .frame(width: 84, height: 48)
-            .foregroundStyle(selection == tab ? .orange : .white)
+            .foregroundStyle(selection == tab ? BinaryBuddyTheme.accent : .white)
             .background(selection == tab ? Color.white.opacity(0.16) : Color.clear)
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct BinaryBuddyToolHeader: View {
+    let title: String
+    var subtitle: String?
+    var titleSize: CGFloat = 22
+    var titleColor: Color = .secondary
+    var markSize: CGFloat = 34
+    var topPadding: CGFloat = 6
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 10) {
+            DebugBuddyMark(size: markSize)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.system(size: titleSize, weight: .semibold, design: .rounded))
+                    .foregroundStyle(titleColor)
+
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.system(.callout, design: .monospaced))
+                        .foregroundStyle(Color.white.opacity(0.7))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, topPadding)
+    }
+}
+
+private struct DebugBuddyMark: View {
+    let size: CGFloat
+
+    var body: some View {
+        GeometryReader { proxy in
+            let side = min(proxy.size.width, proxy.size.height)
+            let accent = BinaryBuddyTheme.accent
+
+            ZStack {
+                antenna(side: side, x: side * 0.33, angle: -22)
+                antenna(side: side, x: side * 0.67, angle: 22)
+
+                RoundedRectangle(cornerRadius: side * 0.16, style: .continuous)
+                    .fill(Color(red: 0.11, green: 0.12, blue: 0.12))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: side * 0.16, style: .continuous)
+                            .stroke(Color.white.opacity(0.18), lineWidth: side * 0.035)
+                    }
+                    .frame(width: side * 0.78, height: side * 0.68)
+                    .position(x: side * 0.5, y: side * 0.58)
+
+                RoundedRectangle(cornerRadius: side * 0.08, style: .continuous)
+                    .fill(Color.black.opacity(0.78))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: side * 0.08, style: .continuous)
+                            .stroke(Color.white.opacity(0.16), lineWidth: side * 0.02)
+                    }
+                    .frame(width: side * 0.58, height: side * 0.22)
+                    .position(x: side * 0.5, y: side * 0.42)
+
+                Circle()
+                    .fill(accent)
+                    .frame(width: side * 0.055, height: side * 0.055)
+                    .position(x: side * 0.42, y: side * 0.41)
+
+                Circle()
+                    .fill(accent)
+                    .frame(width: side * 0.055, height: side * 0.055)
+                    .position(x: side * 0.58, y: side * 0.41)
+
+                Path { path in
+                    path.addArc(
+                        center: CGPoint(x: side * 0.5, y: side * 0.43),
+                        radius: side * 0.08,
+                        startAngle: .degrees(24),
+                        endAngle: .degrees(156),
+                        clockwise: false
+                    )
+                }
+                .stroke(accent, style: StrokeStyle(lineWidth: side * 0.035, lineCap: .round))
+
+                button(side: side, x: 0.37, y: 0.62, isAccent: false)
+                button(side: side, x: 0.50, y: 0.62, isAccent: false)
+                button(side: side, x: 0.63, y: 0.62, isAccent: true)
+                button(side: side, x: 0.37, y: 0.76, isAccent: false)
+                button(side: side, x: 0.50, y: 0.76, isAccent: false)
+                button(side: side, x: 0.63, y: 0.76, isAccent: false)
+            }
+        }
+        .frame(width: size, height: size)
+    }
+
+    private func antenna(side: CGFloat, x: CGFloat, angle: Double) -> some View {
+        ZStack {
+            Capsule()
+                .fill(Color.white.opacity(0.20))
+                .frame(width: side * 0.055, height: side * 0.22)
+                .position(x: x, y: side * 0.2)
+                .rotationEffect(.degrees(angle))
+
+            Circle()
+                .fill(BinaryBuddyTheme.accent)
+                .frame(width: side * 0.09, height: side * 0.09)
+                .position(x: x + (angle < 0 ? -side * 0.04 : side * 0.04), y: side * 0.08)
+        }
+    }
+
+    private func button(side: CGFloat, x: CGFloat, y: CGFloat, isAccent: Bool) -> some View {
+        RoundedRectangle(cornerRadius: side * 0.04, style: .continuous)
+            .fill(isAccent ? BinaryBuddyTheme.accent : Color.white.opacity(0.16))
+            .frame(width: side * 0.1, height: side * 0.08)
+            .position(x: side * x, y: side * y)
     }
 }
 
@@ -153,12 +273,13 @@ struct ProgrammerCalculatorView: View {
     }
 
     private var titleSection: some View {
-        Text("Programmer Calculator")
-            .font(.system(size: 18, weight: .semibold, design: .rounded))
-            .foregroundStyle(Color.white.opacity(0.72))
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.leading, 4)
-            .padding(.top, 2)
+        BinaryBuddyToolHeader(
+            title: "Programmer Calculator",
+            titleSize: 18,
+            titleColor: Color.white.opacity(0.72),
+            markSize: 30,
+            topPadding: 2
+        )
     }
 
     private var controlSection: some View {
@@ -170,7 +291,7 @@ struct ProgrammerCalculatorView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .tint(.orange)
+                .tint(BinaryBuddyTheme.accent)
 
                 Picker("Bit Width", selection: $selectedBitWidth) {
                     ForEach(BitWidth.allCases) { width in
@@ -178,7 +299,7 @@ struct ProgrammerCalculatorView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .tint(.orange)
+                .tint(BinaryBuddyTheme.accent)
             }
 
         }
@@ -353,7 +474,7 @@ struct ProgrammerCalculatorView: View {
             return Color.white.opacity(0.04)
         }
 
-        return bit.value == "1" ? Color.orange : Color.white.opacity(0.12)
+        return bit.value == "1" ? BinaryBuddyTheme.accent : Color.white.opacity(0.12)
     }
 
     private func toggleBit(_ bit: BitCell) {
@@ -417,7 +538,7 @@ struct ProgrammerCalculatorView: View {
             }
             return operationBackground(for: operation)
         case "=":
-            return Color.orange.opacity(0.34)
+            return BinaryBuddyTheme.accent.opacity(0.34)
         case "AC", "⌫", "±":
             return Color.white.opacity(0.20)
         default:
@@ -431,7 +552,7 @@ struct ProgrammerCalculatorView: View {
 
     private func operationBackground(for operation: CalculatorOperator) -> Color {
         if operation == pendingOperator {
-            return Color.orange.opacity(0.34)
+            return BinaryBuddyTheme.accent.opacity(0.34)
         }
 
         return Color.white.opacity(0.14)
@@ -777,16 +898,10 @@ private struct QFormatDraftView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text("Q-Format")
-                .font(.system(size: 22, weight: .semibold, design: .rounded))
-                .foregroundStyle(.secondary)
-
-            Text(sample.formatLabel)
-                .font(.system(.callout, design: .monospaced))
-                .foregroundStyle(Color.white.opacity(0.7))
-        }
-        .padding(.top, 6)
+        BinaryBuddyToolHeader(
+            title: "Q-Format",
+            subtitle: sample.formatLabel
+        )
     }
 
     private var formatControls: some View {
@@ -797,7 +912,7 @@ private struct QFormatDraftView: View {
                 }
             }
             .pickerStyle(.segmented)
-            .tint(.orange)
+            .tint(BinaryBuddyTheme.accent)
 
             HStack(spacing: 10) {
                 QFormatBitTextField(title: "Integer bits", text: $integerBitsText)
@@ -986,16 +1101,10 @@ private struct I2CToolView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text("I2C 32-bit")
-                .font(.system(size: 22, weight: .semibold, design: .rounded))
-                .foregroundStyle(.secondary)
-
-            Text(mode.subtitle)
-                .font(.system(.callout, design: .monospaced))
-                .foregroundStyle(Color.white.opacity(0.7))
-        }
-        .padding(.top, 6)
+        BinaryBuddyToolHeader(
+            title: "I2C 32-bit",
+            subtitle: mode.subtitle
+        )
     }
 
     private var modeSelector: some View {
@@ -1011,7 +1120,7 @@ private struct I2CToolView: View {
                         .minimumScaleFactor(0.75)
                         .frame(height: 36)
                         .frame(maxWidth: .infinity)
-                        .foregroundStyle(mode == item ? .orange : .white)
+                        .foregroundStyle(mode == item ? BinaryBuddyTheme.accent : .white)
                         .background(mode == item ? Color.white.opacity(0.15) : Color.white.opacity(0.08))
                         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
@@ -1093,7 +1202,7 @@ private struct I2CToolView: View {
                     }
                     .frame(height: 31)
                     .frame(maxWidth: .infinity)
-                    .background(bit.value == "1" ? Color.orange : Color.white.opacity(0.12))
+                    .background(bit.value == "1" ? BinaryBuddyTheme.accent : Color.white.opacity(0.12))
                     .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
                     .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
                     .onTapGesture {
@@ -1835,7 +1944,7 @@ private struct EditableBaseRow: View {
         HStack(spacing: 14) {
             Image(systemName: isActive ? "circle.fill" : "circle")
                 .font(.caption2)
-                .foregroundStyle(isActive ? .orange : .secondary)
+                .foregroundStyle(isActive ? BinaryBuddyTheme.accent : .secondary)
                 .frame(width: 14)
 
             Text(title)

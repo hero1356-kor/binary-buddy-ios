@@ -1,8 +1,8 @@
-# BinaryBuddy Product Direction
+# DebugBuddy Product Direction
 
 ## Concept
 
-BinaryBuddy is an ad-free iOS programmer calculator and RTL utility toolbox.
+DebugBuddy is an ad-free iOS programmer calculator and RTL utility toolbox.
 
 The app starts from a simple need: iPhone does not have a built-in programmer calculator mode like the Windows Calculator.
 
