@@ -127,6 +127,7 @@ struct ProgrammerCalculatorView: View {
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 7) {
+                        titleSection
                         controlSection
                         inputSection
                         if let errorMessage {
@@ -149,6 +150,15 @@ struct ProgrammerCalculatorView: View {
         .onChange(of: selectedBitWidth) {
             syncFromActiveBase()
         }
+    }
+
+    private var titleSection: some View {
+        Text("Programmer Calculator")
+            .font(.system(size: 18, weight: .semibold, design: .rounded))
+            .foregroundStyle(Color.white.opacity(0.72))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.leading, 4)
+            .padding(.top, 2)
     }
 
     private var controlSection: some View {
