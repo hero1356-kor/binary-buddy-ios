@@ -127,4 +127,26 @@ final class ProgrammerCalculatorTests: XCTestCase {
             XCTAssertEqual(error as? I2C32BitConversionError, .invalidBinaryBitCount)
         }
     }
+
+    func testQFormatSignedFractionBitsAreShownAfterBinaryPoint() {
+        let sample = QFormatSample(
+            realText: "-0.5",
+            signBitCount: 1,
+            integerBits: 0,
+            fractionalBits: 15
+        )
+
+        XCTAssertEqual(sample.binaryText, "1.1000_0000_0000_000")
+    }
+
+    func testQFormatUnsignedFractionOnlyDoesNotPadToStandardWidth() {
+        let sample = QFormatSample(
+            realText: "0.5",
+            signBitCount: 0,
+            integerBits: 0,
+            fractionalBits: 15
+        )
+
+        XCTAssertEqual(sample.binaryText, ".1000_0000_0000_000")
+    }
 }

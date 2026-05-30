@@ -740,10 +740,21 @@ private struct QFormatDraftView: View {
                     .padding(.top, 10)
                     .padding(.bottom, 94)
                 }
+                .scrollDismissesKeyboard(.interactively)
             }
             .navigationBarHidden(true)
         }
         .preferredColorScheme(.dark)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+
+                Button("Done") {
+                    dismissKeyboard()
+                }
+                .fontWeight(.semibold)
+            }
+        }
         .onChange(of: numberInterpretation) {
             normalizeBitInputs()
         }
@@ -919,6 +930,15 @@ private struct QFormatDraftView: View {
         let digits = text.filter(\.isNumber)
         let value = Int(digits) ?? min
         return Swift.min(Swift.max(value, min), max)
+    }
+
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
     }
 }
 
@@ -1426,7 +1446,7 @@ private struct QFormatMetricRow: View {
     }
 }
 
-private struct QFormatSample {
+struct QFormatSample {
     let realText: String
     let signBitCount: Int
     let integerBits: Int
@@ -1501,7 +1521,7 @@ private struct QFormatSample {
     var binaryText: String {
         let raw = String(encodedValue, radix: 2)
         let padded = raw.leftPaddedForQFormat(toLength: totalBits, with: "0")
-        return grouped(padded, size: 4)
+        return fixedPointGroupedBinary(padded)
     }
 
     var decodedText: String {
@@ -1655,7 +1675,21 @@ private struct QFormatSample {
         return result == "-0" ? "0" : result
     }
 
-    private func grouped(_ text: String, size: Int) -> String {
+    private func fixedPointGroupedBinary(_ text: String) -> String {
+        let wholeBitCount = signBitCount + integerBits
+        let wholeBits = String(text.prefix(wholeBitCount))
+        let fractionBits = String(text.dropFirst(wholeBitCount))
+        let groupedWhole = groupedFromRight(wholeBits, size: 4)
+        let groupedFraction = groupedFromLeft(fractionBits, size: 4)
+
+        guard !groupedFraction.isEmpty else {
+            return groupedWhole
+        }
+
+        return "\(groupedWhole).\(groupedFraction)"
+    }
+
+    private func groupedFromRight(_ text: String, size: Int) -> String {
         guard size > 0, text.count > size else { return text }
 
         var groups: [String] = []
@@ -1671,6 +1705,27 @@ private struct QFormatSample {
 
         if !current.isEmpty {
             groups.insert(current, at: 0)
+        }
+
+        return groups.joined(separator: "_")
+    }
+
+    private func groupedFromLeft(_ text: String, size: Int) -> String {
+        guard size > 0, text.count > size else { return text }
+
+        var groups: [String] = []
+        var current = ""
+
+        for character in text {
+            current.append(character)
+            if current.count == size {
+                groups.append(current)
+                current = ""
+            }
+        }
+
+        if !current.isEmpty {
+            groups.append(current)
         }
 
         return groups.joined(separator: "_")
